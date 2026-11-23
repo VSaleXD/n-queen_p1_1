@@ -1,55 +1,82 @@
-#include <iostream>
-#include <string>
 #include <vector>
-#include <cstdlib>
+#include <string>
+#include <functional>
 
-using namespace std;
+typedef std::vector<int> vll;
+typedef std::vector<vll> vvl;
+typedef std::pair<int, int> pll;
+typedef std::vector<bool> vb;
+typedef std::vector<vb> vvb;
+typedef std::vector<std::string> vs;
+typedef std::vector<vs> vvs;
 
-typedef vector<int> vll;
-typedef vector<vll> vvl;
-typedef pair<int, int> pll;
-typedef vector<string> vs;
-typedef vector<vs> vvs;
-typedef vector<bool> vb;
-typedef vector<vb> vvb;
+std::vector<std::vector<int>> solveNQueens(int n) {
+     // Track which columns are occupied by queens
+    std::vector<int> colOccupied(n);
 
-bool isSafe(int row, int column, const vll& columns) {
-  for (int previousRow = 0; previousRow < row; ++previousRow) {
-    int previousColumn = columns[previousRow];
+    // Track which diagonals are occupied (top-left to bottom-right)
+    // For diagonal: row + col is constant, range: [0, 2n-2]
+    std::vector<int> diagonalOccupied(n << 1);
 
-    if (previousColumn == column) return false;
-    if (abs(previousRow - row) == abs(previousColumn - column)) return false;
-  }
-  return true;
-}
+    // Track which anti-diagonals are occupied (top-right to bottom-left)
+    // For anti-diagonal: row - col + n is constant, range: [1, 2n-1]
+    std::vector<int> antiDiagonalOccupied(n << 1);
 
-void searchRow(int row, int n, vll& columns, vvl& solutions) {
-  if (row == n) {
-    solutions.push_back(columns);
-    return;
-  }
+    // Store all valid board configurations
+    vvs result;
 
-  for (int column = 0; column < n; ++column) {
-    if (isSafe(row, column, columns)) {
-      columns[row] = column;
-      searchRow(row + 1, n, columns, solutions);
-      columns[row] = -1;
+    // Current board state during backtracking
+    vs currentBoard(n, std::string(n, '.'));
+
+        // Recursive function to place queens row by row
+        std::function<void(int)> backtrack = [&](int row) -> void {
+            // Base case: all queens successfully placed
+            if (row == n) {
+                result.push_back(currentBoard);
+                return;
+            }
+
+            // Try placing a queen in each column of the current row
+            for (int col = 0; col < n; ++col) {
+                // Check if current position is safe (no conflicts)
+                if (colOccupied[col] + diagonalOccupied[row + col] +
+                    antiDiagonalOccupied[n - row + col] == 0) {
+
+                    // Place the queen
+                    currentBoard[row][col] = 'Q';
+
+                    // Mark the column and diagonals as occupied
+                    colOccupied[col] = 1;
+                    diagonalOccupied[row + col] = 1;
+                    antiDiagonalOccupied[n - row + col] = 1;
+
+                    // Recursively place queens in the next row
+                    backtrack(row + 1);
+
+                    // Backtrack: remove the queen and unmark positions
+                    colOccupied[col] = 0;
+                    diagonalOccupied[row + col] = 0;
+                    antiDiagonalOccupied[n - row + col] = 0;
+                    currentBoard[row][col] = '.';
+                }
+            }
+        };
+        backtrack(0);
+
+        vvl solutions;
+        solutions.reserve(result.size());
+        for (const vs &board : result) {
+            vll columns(n);
+            for (int row = 0; row < n; ++row) {
+                for (int col = 0; col < n; ++col) {
+                    if (board[row][col] == 'Q') {
+                        columns[row] = col;
+                        break;
+                    }
+                }
+            }
+            solutions.push_back(columns);
+        }
+
+        return solutions;
     }
-  }
-}
-
-vvl solveNQueens(int n) {
-  vll columns(n, -1);
-  vvl solutions;
-  searchRow(0, n, columns, solutions);
-  return solutions;
-}
-
-int main() {
-  int n;
-  if (cin >> n) {
-    vvl ans = solveNQueens(n);
-    cout << ans.size() << "\n";
-  }
-  return 0;
-}
