@@ -1,55 +1,55 @@
+#include <iostream>
 #include <string>
 #include <vector>
 #include <cstdlib>
 
-#include "nqueens.h"
+using namespace std;
 
-namespace {
+typedef vector<int> vll;
+typedef vector<vll> vvl;
+typedef pair<int, int> pll;
+typedef vector<string> vs;
+typedef vector<vs> vvs;
+typedef vector<bool> vb;
+typedef vector<vb> vvb;
 
-class Search {
- public:
-  Search(int n) : n_(n), columns_(n, -1) {}
+bool isSafe(int row, int column, const vll& columns) {
+  for (int previousRow = 0; previousRow < row; ++previousRow) {
+    int previousColumn = columns[previousRow];
 
-  std::vector<std::vector<int>> run() {
-    searchRow(0);
-    return solutions_;
+    if (previousColumn == column) return false;
+    if (abs(previousRow - row) == abs(previousColumn - column)) return false;
+  }
+  return true;
+}
+
+void searchRow(int row, int n, vll& columns, vvl& solutions) {
+  if (row == n) {
+    solutions.push_back(columns);
+    return;
   }
 
- private:
-  int n_;
-  std::vector<int> columns_;
-  std::vector<std::vector<int>> solutions_;
-
-  bool isSafe(int row, int column) const {
-    for (int previousRow = 0; previousRow < row; ++previousRow) {
-      int previousColumn = columns_[previousRow];
-
-      if (previousColumn == column) return false;
-      if (std::abs(previousRow - row) == std::abs(previousColumn - column)) return false;
-    }
-    return true;
-  }
-
-  void searchRow(int row) {
-    if (row == n_) {
-      solutions_.push_back(columns_);
-      NQ_SNAPSHOT(nq::queensOf(columns_),
-                  "solution " + std::to_string(solutions_.size()));
-      return;
-    }
-
-    for (int column = 0; column < n_; ++column) {
-      if (isSafe(row, column)) {
-        columns_[row] = column;
-        searchRow(row + 1);
-        columns_[row] = -1;
-      }
+  for (int column = 0; column < n; ++column) {
+    if (isSafe(row, column, columns)) {
+      columns[row] = column;
+      searchRow(row + 1, n, columns, solutions);
+      columns[row] = -1;
     }
   }
-};
+}
 
-}  // namespace
+vvl solveNQueens(int n) {
+  vll columns(n, -1);
+  vvl solutions;
+  searchRow(0, n, columns, solutions);
+  return solutions;
+}
 
-std::vector<std::vector<int>> solveNQueens(int n) {
-  return Search(n).run();
+int main() {
+  int n;
+  if (cin >> n) {
+    vvl ans = solveNQueens(n);
+    cout << ans.size() << "\n";
+  }
+  return 0;
 }
